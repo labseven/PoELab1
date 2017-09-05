@@ -10,7 +10,9 @@ const int buttonPin = 2;  // Pins 2 & 3 support interrupts
 int cur_mode = 0;
 const int num_modes = 2;
 
-bool button_status = false;
+unsigned long lastDebounceMillis = 0;
+unsigned long curDebounceMillis = 0;
+const int debounceDelay = 100;
 
 
 void mode_on(){
@@ -29,7 +31,12 @@ void mode_off(){
 
 
 void increment_mode(){
-  // Debounce here if necessary
+  curDebounceMillis = millis();
+  if(curDebounceMillis - lastDebounceMillis < debounceDelay){
+    return;
+  }
+
+  lastDebounceMillis = curDebounceMillis;
   
   cur_mode++;
   if (cur_mode == num_modes){
