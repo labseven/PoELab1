@@ -8,25 +8,53 @@ const int ledPins[] = {10, 11, 12};
 const int buttonPin = 2;  // Pins 2 & 3 support interrupts
 
 int cur_mode = 0;
-const int num_modes = 2;
+const int num_modes = 3;
 
 unsigned long lastDebounceMillis = 0;
 unsigned long curDebounceMillis = 0;
 const int debounceDelay = 100;
 
+unsigned long lastTimeMillis = 0;
+unsigned long curTimeMillis = 0;
+
+bool mode_blinking_led_status = false;
+const int mode_blinking_delay_millis = 500;
+
+
+const bool debug = false;
 
 void mode_on(){
-  Serial.println("mode_on");
+  if (debug) {
+    Serial.println("mode_on");
+  }
    for (int i=0; i < num_leds; i++){
     digitalWrite(ledPins[i], HIGH);
   }
 }
 
 void mode_off(){
-  Serial.println("mode_off");
-   for (int i=0; i < num_leds; i++){
+  if (debug) {
+    Serial.println("mode_off");
+  }
+  for (int i=0; i < num_leds; i++){
     digitalWrite(ledPins[i], LOW);
   }
+}
+
+void mode_blinking(){
+  if (debug) {
+    Serial.println("mode_blinking");
+  }
+
+  curTimeMillis = millis();
+  if (curTimeMillis - lastTimeMillis > mode_blinking_delay_millis) {
+    lastTimeMillis = curTimeMillis;
+    mode_blinking_led_status = !mode_blinking_led_status;
+     for (int i=0; i < num_leds; i++){
+      digitalWrite(ledPins[i], mode_blinking_led_status);
+    }
+  }
+
 }
 
 
@@ -42,21 +70,10 @@ void increment_mode(){
   if (cur_mode == num_modes){
     cur_mode = 0;
   }
-
-  Serial.print("Changing mode to ");
-  Serial.println(cur_mode);
-  switch (cur_mode) {
-    case 0:
-      mode_off();
-      break;
-    case 1:
-      mode_on();
-      break;
-  }
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(57600);
   
   for (int i=0; i < num_leds; i++){
     pinMode(ledPins[i], OUTPUT);
@@ -67,7 +84,22 @@ void setup() {
 }
 
 void loop() {
-  // Do the blinking
+  switch (cur_mode) {
+    case 0:
+      mode_off();
+      break;
+      
+    case 1:
+      mode_on();
+      break;
+      
+    case 2:
+      mode_blinking();
+      break;
+      
+    default:
+      Serial.println("switch failed");
+  }
 }
 
 
