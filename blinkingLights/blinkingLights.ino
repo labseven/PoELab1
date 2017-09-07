@@ -2,13 +2,17 @@
  * Jared and Adam Poe Lab 1
  */
 
-const int num_leds = 3;
-const int ledPins[] = {10, 11, 12};
+const int num_leds = 5;
+const int ledPins[] = {8, 9, 10, 11, 12};
 
 const int buttonPin = 2;  // Pins 2 & 3 support interrupts
+const int potPin = A0;
+
+const int potMax = 910;
+const int potLedIndex = potMax / num_leds;
 
 int cur_mode = 0;
-const int num_modes = 3;
+const int num_modes = 4;
 
 unsigned long lastDebounceMillis = 0;
 unsigned long curDebounceMillis = 0;
@@ -57,6 +61,17 @@ void mode_blinking(){
 
 }
 
+void mode_adjust(){
+ if (debug) {
+  Serial.println("mode_adjust");
+ }
+ for (int i=0; i < num_leds; i++){
+    digitalWrite(ledPins[i], LOW);
+  }
+ digitalWrite(ledPins[analogRead(potPin) / potLedIndex], HIGH);
+ 
+}
+
 
 void increment_mode(){
   curDebounceMillis = millis();
@@ -73,7 +88,7 @@ void increment_mode(){
 }
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(9600);
   
   for (int i=0; i < num_leds; i++){
     pinMode(ledPins[i], OUTPUT);
@@ -95,6 +110,10 @@ void loop() {
       
     case 2:
       mode_blinking();
+      break;
+      
+    case 3:
+      mode_adjust();
       break;
       
     default:
