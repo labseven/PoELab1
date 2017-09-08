@@ -75,7 +75,7 @@ void mode_adjust(){
 }
 
 
-void increment_mode(){
+void increment_mode_isr(){
   cur_debounce_millis = millis();
   if(cur_debounce_millis - last_debounce_millis < debounce_delay){
     return;
@@ -97,7 +97,7 @@ void setup() {
   }
 
   pinMode(button_pin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(button_pin), increment_mode, FALLING);
+  attachInterrupt(digitalPinToInterrupt(button_pin), increment_mode_isr, FALLING);
 }
 
 void loop() {
