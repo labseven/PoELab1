@@ -1,0 +1,140 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{lipsum}
+\usepackage{graphicx} 
+\usepackage{svg}
+
+\usepackage{xargs,lipsum,caption,changepage,ifthen}
+
+
+% These are packages you may need... It doesn't cost anything to include them all, so you might as well.
+\usepackage{amstext} %allows you to put text in math mode
+\usepackage{amsmath} %includes lots of math-related capabilities
+\usepackage{graphicx} %allows you to include pictures
+\usepackage{float} %improves the use of floating objects (like picutes)
+\usepackage{caption} %allows you to change caption styles on figures
+\usepackage{epstopdf} %automatically converts EPS files (like from matlab)
+\usepackage{hyperref} %allows you to include links
+\usepackage{varioref} %requirement of fancyref
+\usepackage{fancyref} %allows really nice looking and convienient references
+\usepackage[section]{placeins} %makes your figures not float past section barriers
+\usepackage{perpage} %restarts footnote numbering by page
+\usepackage{listings} % for code
+\usepackage{lettrine} % for big letters at the start of paragraphs
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\pagestyle{fancy}
+\lhead{PoE Lab 1: Briskman, Novotny}
+\rhead{\thepage}
+\cfoot{}
+
+\title{PoE Lab 1: Das Blinken Lightzen}
+\author{Jared Briskman, Adam Novotny}
+\date{September 2017}
+
+\begin{document}
+
+\maketitle{}
+
+\thispagestyle{empty}
+
+\section{Introduction}
+
+\lettrine{I}{n} this lab, we were tasked with creating a bike light with multiple functions, incorporating an analog sensor. We implemented a 4 state light, having all on, all off, blinking, and adustable sweep modes.
+
+\section{Hardware}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=11cm]{CircuitDiagram}
+    \caption{Our final circuit schematic, with $R1 = 1 k \Omega$, $R2 = 10 k \Omega$, and $P1 = 10k \Omega$}
+    \label{fig:circuit}
+\end{figure}
+
+\subsection{Circuit Design:}
+As we only had to drive 5 LEDs, we opted for the simplest configuration of identical LED and resistor pairs in series across 5 digital pins. In order to read button presses, we pulled a digital pin high, then connected the button to ground, in order to trigger on the falling edge. Finally, for the potentiometer, we read the wiper voltage off of an analog pin. 
+
+\subsection{Resistor Selection:}
+Selecting resistors for LEDs:
+The LEDs we are using have a forward voltage of 1.9V-2.3V at 10mA\cite{ledDatasheet}. Using Ohm's law, we chose $1k\Omega$ resistors.
+\begin{align*}
+    V&=IR\\
+    2V&=10mA * R\\
+    R&=200\Omega
+\end{align*}
+We grabbed the next higher available resistor in the cart, $1k\Omega$.\\
+We chose a $10k\Omega$ pull-down resistor for the button, as recommended by the handout\cite{labHandout}.\\
+We used a $10k\Omega$ potentiometer, because that was what was available from the cart, and within reasonable values.\\
+
+\section{Software}
+
+\subsection{Overview:}
+As an overview, our the arduino sits in \lstinline{loop()}, interating over a switch statement for each of our modes. Upon an interrupt from the falling edge of a button press, our Interrupt Service Routine, \lstinline{increment_mode_ISR()} debounces the switch, then increments the mode counter.
+
+\subsection{Design Decisions:}
+We decided to debounce the button presses, as we were occasionally getting multiple falling edges on a single button press. Unhandled, this resulted in skipping over modes. In order to remedy this issue, we store the timestamp of the last interrupt, then check if the elapsed time since the previous interrupt has been longer than a specified delay. A simpler option could have been to use a delay, but that would come with the downsides of a long blocking function. It is interesting to note that as \lstinline{millis()} uses interrupts itself, it will not update within the ISR function. Fortunately, that is not an issue with this debouncing method.
+
+We used an interrupt for the button mainly to learn about pin interrupts and ISRs. Pin interrupts have the advantage of being immediatly responsive, which is especially useful in the case of a slow global loop or other heavy code. A simpler option could have been to query the state of the pin every loop. We used a global loop and \lstinline{millis()} to switch the lights because that is what we are familiar with and it works well enough in this case. Using timer interrupts for LED timing would be more versatile, but more complicated.
+
+We employed a debug flag to selectively enable more verbose status messages over the serial connection. This keeps the serial output much more readable when deeper insight is not required.
+
+\subsection{Modes:}
+\lstinline{mode_on()} and \lstinline{mode_off()} are fairly self explanatory. \lstinline{mode_blinking()} checks elapsed time against a delay in a similar fashion to our debouncing method. \lstinline{mode_adjust()} reads the potentiometer to select an LED to light up based on the voltage.
+
+\section{Reflections}
+This was a great refresher on using arduino. We chose to use pin interrupts to learn about their implementation in arduino, and did gain useful experience, realizing the value of a very short and fast ISR, along with the consequences of using timers with interrupts.
+We are both satisfied with our learning, teaming, and deliverable.
+
+\section{Appendix}
+\subsection{Source Code:}
+
+\href{https://github.com/labseven/PoELab1}{[\color{blue}{View on Github}]} \\
+Here's our source code, in full: \\
+
+\lstinputlisting[language=C]{blinkingLights.ino}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=11cm]{CircuitPicture}
+    \caption{A picture of our final circuit}
+    \label{fig:picture}
+\end{figure}
+
+\begin{thebibliography}{9}
+\bibitem{ledDatasheet}
+    LED Datasheet,
+    \url{http://www.kingbrightusa.com/images/catalog/SPEC/WP7113ID.pdf}
+\bibitem{labHandout}
+    Lab Handout,
+    \url{http://poe.olin.edu/lab1.html}
+\end{thebibliography}
+
+\end{document}
+
+
